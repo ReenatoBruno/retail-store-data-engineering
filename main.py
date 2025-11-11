@@ -17,7 +17,7 @@ def main():
     df_raw, extract_stats = extract_data(RAW_FILE_PATH)
     
     if df_raw.empty:
-        logging.warning(f'[Pipeline] The extracted data is empty. Check the source file')
+        logging.warning(f'[Pipeline] The extracted data is empty. Check the source file.')
         return
     
     logging.info(f'[Pipeline] Data extraction complete!')

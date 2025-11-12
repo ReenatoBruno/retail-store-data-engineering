@@ -1,5 +1,13 @@
 # Conteúdo do .gitignore
+
+# Arquivos temporários de Python
 __pycache__/
 *.pyc
+
+# Arquivos de log
 logs/
 *.log
+
+# AMBIENTES VIRTUAIS (Adicionar estas linhas)
+.venv/
+venv/

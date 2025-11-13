@@ -54,7 +54,7 @@ def data_overview(df: pd.DataFrame, stage: str = "INITIAL", invalid_values: list
     Logs missing values and basic data quality statistics before and after core transformation steps.
     """
     # Create a copy to ensure the function is pure.
-    df_copy = df.copy()
+    df = df.copy()
 
     # Define common string representations of missing/invalid data to be standardized.
     if invalid_values is None:
@@ -70,6 +70,13 @@ def data_overview(df: pd.DataFrame, stage: str = "INITIAL", invalid_values: list
         'Location'
     ]
 
+    # Define explicitly the columns that are expected to be numeric data. 
+    numeric_columns = [
+        'Price_Per_Unit', 
+        'Quantity', 
+        'Total_Spent'
+    ]
+
     # Standardize string columns: convert common invalid values to np.nan for accurate counting.
     for col in string_cols:
         if col in df.columns:
@@ -80,18 +87,27 @@ def data_overview(df: pd.DataFrame, stage: str = "INITIAL", invalid_values: list
             .str.lower()
             .replace(invalid_values, np.nan)
         )
+    # Standardize numeric columns: convert invalid strings to np.nan for accurate counting. 
+    for col in numeric_columns:  
+        if col in df.columns:
+            df[col] = (
+            df[col]
+            .astype(str)
+            .str.strip()
+            .replace(invalid_values, np.nan)
+        )
             
     # Compute missing value summary across all columns after preliminary cleaning.
-    missing_summary = df_copy.isna().sum()
+    missing_summary = df.isna().sum()
     
     # Log the results, including the current stage (INITIAL or FINAL) for traceability.
     logging.info(f'[Transform][data_overview][{stage}] Missing values per column:\n{missing_summary}')
 
     # Assemble a dictionary with key data quality statistics for potential return or storage.
     stats = {
-        'row_count': len(df_copy), 
+        'row_count': len(df), 
         'missing_values': missing_summary.to_dict(), 
-        'data_type': df_copy.dtypes.apply(str).to_dict()
+        'data_type': df.dtypes.apply(str).to_dict()
     }
 
     return stats

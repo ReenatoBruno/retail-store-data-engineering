@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 import pandas as pd 
+from src.modules.constants import EXPECTED_COLS, STRING_COLS, NUMERIC_COLS
 
 def rename_columns(df):
     """
@@ -18,24 +19,9 @@ def rename_columns(df):
         .str.replace(' ', '_', regex=False)
     )
 
-    # Define expected schema to enforce data quality and consistency. 
-    expected_cols = [
-        'Transaction_Id',
-         'Customer_Id',
-        'Category',
-        'Item',
-        'Price_Per_Unit',
-        'Quantity',
-        'Total_Spent',
-        'Payment_Method',
-        'Location',
-        'Transaction_Date',
-        'Discount_Applied'
-    ]
-    
     # Check for discrepancies by comparing current columns against the expected schema. 
-    missing_columns = [col for col in expected_cols if col not in df.columns]
-    extra_columns = [col for col in df.columns if col not in expected_cols]
+    missing_columns = [col for col in EXPECTED_COLS if col not in df.columns]
+    extra_columns = [col for col in df.columns if col not in EXPECTED_COLS]
 
     if missing_columns:
         logging.error(f'[Transform][rename_columns] Missing columns: {missing_columns}')
@@ -47,7 +33,7 @@ def rename_columns(df):
     # Debug log of final columns 
     logging.debug(f'[Transform][rename_columns] Columns after renaming: {list(df.columns)}')
 
-    return df
+    return df[EXPECTED_COLS]
 
 def data_overview(df: pd.DataFrame, stage: str = "INITIAL", invalid_values: list = None) -> dict:
     """
@@ -60,25 +46,8 @@ def data_overview(df: pd.DataFrame, stage: str = "INITIAL", invalid_values: list
     if invalid_values is None:
         invalid_values = ['error', 'unknown', 'nan', 'none', 'na', '']
 
-    # Define explicitly the columns that are expected to be strings/categorical data.
-    string_cols = [
-        'Transaction_Id', 
-        'Customer_Id', 
-        'Category', 
-        'Item', 
-        'Payment_Method', 
-        'Location'
-    ]
-
-    # Define explicitly the columns that are expected to be numeric data. 
-    numeric_columns = [
-        'Price_Per_Unit', 
-        'Quantity', 
-        'Total_Spent'
-    ]
-
     # Standardize string columns: convert common invalid values to np.nan for accurate counting.
-    for col in string_cols:
+    for col in STRING_COLS:
         if col in df.columns:
             df[col] = (
             df[col]
@@ -88,7 +57,7 @@ def data_overview(df: pd.DataFrame, stage: str = "INITIAL", invalid_values: list
             .replace(invalid_values, np.nan)
         )
     # Standardize numeric columns: convert invalid strings to np.nan for accurate counting. 
-    for col in numeric_columns:  
+    for col in NUMERIC_COLS:  
         if col in df.columns:
             df[col] = (
             df[col]

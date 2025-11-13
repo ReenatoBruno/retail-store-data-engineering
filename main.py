@@ -1,8 +1,9 @@
 import logging
 import pandas as pd 
+from src.modules.paths import RAW_FILE_PATH
 from src.extract.extract import extract_data
 from src.log.log_config import setup_logging
-from src.modules.paths import RAW_FILE_PATH
+from src.transform.transform import transform_data
 
 setup_logging()
 
@@ -25,6 +26,11 @@ def main():
     logging.info(f'\n' + df_raw.head().to_string(index=False))
     logging.info('='* 50)
 
+    # === STEP 3: TRANSFORM 
+    logging.info('[Pipeline] Initiating data transformation process...')
+    df_final = transform_data(df_raw)
+    logging.info('[Pipeline] Data transformation successfully completed.')
+    logging.info('='* 50)
 
 if __name__ == '__main__':
     main()

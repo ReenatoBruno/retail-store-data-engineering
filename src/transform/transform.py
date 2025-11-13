@@ -86,7 +86,7 @@ def transform_data(df):
     Main transformation pipeline. 
     """
     # === STEP 0: CREATE A COPY OF THE DATAFRAME ===
-    df_clean = df.copy
+    df_clean = df.copy()
 
     # === STEP 1: RENAMING & VALIDATE SCHEMA === 
     logging.info(f'[Transform][rename_columns] Starting columns standardization and schema validation.')

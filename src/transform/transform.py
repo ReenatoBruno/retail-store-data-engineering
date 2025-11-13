@@ -108,19 +108,68 @@ def convert_data_types(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+def clean_price_per_unit(df: pd.DataFrame) -> pd.DataFrame:
+
+    # Create a copy to ensure the function is pure.
+    df = df.copy()
+
+    # Log the count of NaNs before imputation for quality check.
+    count_before_na = df['Price_Per_Unit'].isna().sum()
+
+    # 1. Extract the Item ID (number) from the 'Item' column.
+    df['Item_Number'] = (
+        df['Item']
+        .str.split('_').str[1]
+        .astype(str)
+    )
+    # 2. Create the mapping dictonary (item_id -> Price)
+    price_map = (
+        df
+        .dropna(subset=['Item_Number', 'Price_Per_Unit'])
+        .set_index('Item_Number')
+        ['Price_Per_Unit'].to_dict()
+    )
+    # 3. Imputing missing Price_Per_Unit based on Item_Number mapping. 
+    df['Price_Per_Unit'] = np.where(
+        df['Price_Per_Unit'].isna() & df['Item_Number'].notna(), 
+        df['Item_Number'].map(price_map), 
+        df['Price_Per_Unit']
+    )
+
+    # Log the count of NaNs after imputation for quality check.
+    count_after_na = df['Price_Per_Unit'].isna().sum()
+    imputed_count = count_before_na - count_after_na
+    logging.info(f'[Transform][clean_price_per_unit] Imputed {imputed_count} values using item mapping. {count_after_na} NaNs remain.')
+
+    # Drop the temporaty column.
+    df.drop(columns=['Item_Number'], inplace=True)
+
+    return df
+
 def transform_data(df):
     """
     Main transformation pipeline. 
     """
-    # === STEP 0: CREATE A COPY OF THE DATAFRAME ===
-    df_clean = df.copy()
-
     # === STEP 1: RENAMING & VALIDATE SCHEMA === 
     logging.info(f'[Transform][rename_columns] Starting columns standardization and schema validation.')
     df_clean = rename_columns(df_clean)
+    logging.info('='* 50) 
 
     # === STEP 2: LOG DATA QUALITY (INITIAL) ===
     logging.info('[Transform][data_overview] Logging initial data statistics.')
-    df_clean = data_overview(df_clean, stage='INITIAL')
+    data_overview(df_clean, stage='INITIAL') 
+    logging.info('='* 50)
+
+    # === STEP 3: DATA TYPE CONVERSION & STANDARDIZATION ===
+    logging.info('[Transform][convert_data_types] Initiating data type conversion and text standardization.')
+    df_clean = convert_data_types(df_clean)
+    logging.info('[Transform][convert_data_types] Data type conversion completed.')
+    logging.info('='* 50)
+
+    # === STEP 4: IMPUTE PRICE PER UNIT 
+    logging.info('[Transform][clean_price_per_unit] Initiating item-based price imputation.')
+    df_clean = clean_price_per_unit(df_clean)
+    logging.info('[Transform][clean_price_per_unit] Price imputation finalized.')
+    logging.info('='* 50)
 
     return df_clean

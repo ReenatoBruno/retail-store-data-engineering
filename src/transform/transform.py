@@ -49,18 +49,66 @@ def rename_columns(df):
 
     return df
 
+def data_overview(df: pd.DataFrame, stage: str = "INITIAL", invalid_values: list = None) -> dict:
+    """
+    Logs missing values and basic data quality statistics before and after core transformation steps.
+    """
+    # Create a copy to ensure the function is pure.
+    df_copy = df.copy()
+
+    # Define common string representations of missing/invalid data to be standardized.
+    if invalid_values is None:
+        invalid_values = ['error', 'unknown', 'nan', 'none', 'na', '']
+
+    # Define explicitly the columns that are expected to be strings/categorical data.
+    string_cols = [
+        'Transaction_Id', 
+        'Customer_Id', 
+        'Category', 
+        'Item', 
+        'Payment_Method', 
+        'Location'
+    ]
+
+    # Standardize string columns: convert common invalid values to np.nan for accurate counting.
+    for col in string_cols:
+        if col in df.columns:
+            df[col] = (
+            df[col]
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .replace(invalid_values, np.nan)
+        )
+            
+    # Compute missing value summary across all columns after preliminary cleaning.
+    missing_summary = df_copy.isna().sum()
+    
+    # Log the results, including the current stage (INITIAL or FINAL) for traceability.
+    logging.info(f'[Transform][data_overview][{stage}] Missing values per column:\n{missing_summary}')
+
+    # Assemble a dictionary with key data quality statistics for potential return or storage.
+    stats = {
+        'row_count': len(df_copy), 
+        'missing_values': missing_summary.to_dict(), 
+        'data_type': df_copy.dtypes.apply(str).to_dict()
+    }
+
+    return stats
 
 def transform_data(df):
     """
     Main transformation pipeline. 
     """
-
-    # Create a copy to ensure the function is pure.
+    # === STEP 0: CREATE A COPY OF THE DATAFRAME ===
     df_clean = df.copy
 
-    # Renaming and Schema validation step.
+    # === STEP 1: RENAMING & VALIDATE SCHEMA === 
     logging.info(f'[Transform][rename_columns] Starting columns standardization and schema validation.')
     df_clean = rename_columns(df_clean)
 
+    # === STEP 2: LOG DATA QUALITY (INITIAL) ===
+    logging.info('[Transform][data_overview] Logging initial data statistics.')
+    df_clean = data_overview(df_clean, stage='INITIAL')
 
     return df_clean

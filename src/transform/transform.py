@@ -81,6 +81,33 @@ def data_overview(df: pd.DataFrame, stage: str = "INITIAL", invalid_values: list
 
     return stats
 
+def convert_data_types(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Convert columns to their correct data type. 
+    """
+    # Create a copy to ensure the function is pure.
+    df = df.copy()
+
+    # Standardize string columns by replacing empty spaces with underscores.
+    for col in STRING_COLS:
+        if col in df.columns:
+            df[col] = (
+            df[col]
+            .astype(str)
+            .replace(' ', '_')
+        )
+            
+    # Convert cleaned numeric columns to float64 to turn any remaining invalid values into NaN.
+    for col in NUMERIC_COLS:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    # Convert the transaction date column to the datetime dtype, coercing any invalid dates to NaT (Not a Time).
+    if 'Transaction_Date' in df.columns:
+        df['Transaction_Date'] = pd.to_datetime(df['Transaction_Date'], errors='coerce')
+
+    return df
+
 def transform_data(df):
     """
     Main transformation pipeline. 
